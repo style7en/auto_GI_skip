@@ -1,0 +1,11 @@
+#include <windows.h>
+#include "resource.h"
+
+// 开发构建：与 app.rc 相同，但使用不提权的清单，
+// 方便在非管理员会话下运行 --cv-test / --capture-test 等自检。
+IDI_APPICON             ICON            "app.ico"
+
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "app.dev.manifest"
+
+#include "templates.rcinc"
+#include "version.rcinc"

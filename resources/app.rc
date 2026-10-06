@@ -1,0 +1,11 @@
+#include <windows.h>
+#include "resource.h"
+
+// 应用图标（exe 图标 + 窗口图标共用）
+IDI_APPICON             ICON            "app.ico"
+
+// 应用程序清单：requireAdministrator + PerMonitorV2 DPI
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "app.manifest"
+
+#include "templates.rcinc"
+#include "version.rcinc"

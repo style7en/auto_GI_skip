@@ -1,0 +1,24 @@
+## 构建产物（由 make 生成，不入库）
+##   build/obj/  正式版中间产物
+##   build/dev/  开发版中间产物与开发版 exe
+##   release/    正式版 exe 与 assets（跑 make 即可重新生成）
+build/
+release/
+
+## 运行期产物
+log/
+out/
+
+## 兼容历史残留的旧目录名（已废弃）
+build-dev/
+release-dev/
+
+## IDE
+.vs/
+.vscode/
+.idea/
+*.user
+
+## 系统
+Thumbs.db
+.DS_Store

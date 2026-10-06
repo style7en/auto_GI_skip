@@ -1,0 +1,8 @@
+// 识别模板资源，被 app.rc / app.dev.rc 共用
+// 路径相对于本文件所在目录（resources/）
+
+IDR_TEMPLATE_DISABLED_UI    RCDATA  "..\\assets\\1920x1080\\disabled_ui.png"
+IDR_TEMPLATE_STOP_AUTO      RCDATA  "..\\assets\\1920x1080\\stop_auto.png"
+IDR_TEMPLATE_OPTION_ICON    RCDATA  "..\\assets\\1920x1080\\icon_option.png"
+IDR_TEMPLATE_PAGE_CLOSE     RCDATA  "..\\assets\\1920x1080\\page_close.png"
+IDR_TEMPLATE_HANGOUT_SKIP   RCDATA  "..\\assets\\1920x1080\\hangout_skip.png"
