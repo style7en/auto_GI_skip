@@ -401,9 +401,10 @@ void MainWindow::CreateControls() {
                                   BS_AUTOCHECKBOX, 0, IDC_CHK_INTERACT_KEY);
     chkPreferOrange_ = CreateChild(hwnd_, L"BUTTON", L"优先选择橙色选项（含奖励）",
                                    BS_AUTOCHECKBOX, 0, IDC_CHK_PREFER_ORANGE);
-    chkBlackScreen_ = CreateChild(hwnd_, L"BUTTON", L"黑屏剧情自动点击（用鼠标）",
+    // 这两项会移动鼠标，默认不勾选（见 AutoSkipConfig）
+    chkBlackScreen_ = CreateChild(hwnd_, L"BUTTON", L"黑屏剧情自动点击（会移动鼠标）",
                                   BS_AUTOCHECKBOX, 0, IDC_CHK_BLACK_SCREEN);
-    chkClosePopup_ = CreateChild(hwnd_, L"BUTTON", L"自动关闭弹出页面（用鼠标）",
+    chkClosePopup_ = CreateChild(hwnd_, L"BUTTON", L"自动关闭弹出页面（会移动鼠标）",
                                  BS_AUTOCHECKBOX, 0, IDC_CHK_CLOSE_POPUP);
 
     labelStrategy_ = CreateChild(hwnd_, L"STATIC", L"选项兜底策略", SS_LEFT, 0, 0);

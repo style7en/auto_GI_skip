@@ -27,10 +27,15 @@ struct AutoSkipConfig {
     ChatOptionStrategy optionStrategy = ChatOptionStrategy::Last;
 
     // 黑屏剧情自动点击推进（使用鼠标）
-    bool blackScreenClickEnabled = true;
+    //
+    // 默认关闭：这两个开关是唯一会移动鼠标的功能，
+    // 开启后每次触发都会把光标移到固定位置，会干扰用户自己操作鼠标。
+    // 有需要可以在界面上手动勾选。
+    bool blackScreenClickEnabled = false;
 
-    // 自动关闭对话中弹出的页面（使用鼠标点底部三角 / 按 ESC）
-    bool autoClosePopup = true;
+    // 自动关闭对话中弹出的页面（使用鼠标点底部指示器 / 按 ESC）
+    // 默认关闭，原因同上。
+    bool autoClosePopup = false;
 
     // 核心动作的最小间隔（毫秒）
     int actionIntervalMs = 200;
