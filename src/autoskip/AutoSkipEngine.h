@@ -80,6 +80,17 @@ private:
     // 此时主循环会跳过 Tick 并把轮询间隔放大，避免空转。
     bool IsGameReadyForProcessing();
 
+    // 鼠标避让：自动点击会把光标移到固定位置，可能干扰用户自己操作鼠标。
+    // 这里观察光标位置变化来判断"用户是否正在用鼠标"，
+    // 若是则跳过所有需要移动鼠标的动作（键盘操作照常）。
+    void UpdateMouseObservation();
+
+    // 距上次"用户动鼠标"不足 kUserMouseGraceMs 毫秒时返回 true
+    bool IsUserUsingMouse();
+
+    // 我们自己的点击结束后调用，把基线重置为还原后的位置，避免误判成用户操作
+    void RefreshMouseBaseline();
+
     void EnsureCapture();
     void EnsureAssets(double scale);
     void RefreshWindowDiagnostics();
@@ -146,6 +157,11 @@ private:
 
     // 最近一次处于对话界面的时间（宽限 10 秒，与 BetterGI 一致）
     std::chrono::steady_clock::time_point lastPlayingTime_{};
+
+    // 鼠标避让用的观察基线
+    POINT lastObservedCursor_{};
+    bool cursorBaselineValid_ = false;
+    std::chrono::steady_clock::time_point lastUserMouseActivity_{};
 
     // 状态（由 stateMutex_ 保护）
     mutable std::mutex stateMutex_;

@@ -28,6 +28,9 @@ constexpr int kPlayingGraceSeconds = 10;       // "剧情仍在进行"的宽限�
 // 此时不做任何检测，只是低频地看一眼焦点是否回来了，几乎不占 CPU。
 constexpr int kIdleIntervalMs = 250;
 
+// 用户动过鼠标后，这段时间内的自动鼠标操作全部避让（毫秒）
+constexpr int kUserMouseGraceMs = 1200;
+
 // 底部"继续对话"指示器（金色菱形外框 + 内部实心倒三角）的 HSV 掩码。
 //
 // 实测数据来自真实游戏截图（1080p）：
@@ -215,9 +218,52 @@ bool AutoSkipEngine::IsGameReadyForProcessing() {
     return true;
 }
 
+void AutoSkipEngine::UpdateMouseObservation() {
+    int x = 0;
+    int y = 0;
+    if (!InputSimulator::GetCursorScreenPos(x, y)) {
+        return;
+    }
+
+    if (!cursorBaselineValid_) {
+        lastObservedCursor_.x = x;
+        lastObservedCursor_.y = y;
+        cursorBaselineValid_ = true;
+        return;
+    }
+
+    if (x != lastObservedCursor_.x || y != lastObservedCursor_.y) {
+        // 光标位置变了 —— 视为用户操作。
+        // 我们自己的点击会在同一帧内还原光标，并用 RefreshMouseBaseline 重置基线，
+        // 所以这里检测到的变化不会被误判。
+        lastObservedCursor_.x = x;
+        lastObservedCursor_.y = y;
+        lastUserMouseActivity_ = std::chrono::steady_clock::now();
+    }
+}
+
+bool AutoSkipEngine::IsUserUsingMouse() {
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                       std::chrono::steady_clock::now() - lastUserMouseActivity_)
+                       .count();
+    return elapsed < kUserMouseGraceMs;
+}
+
+void AutoSkipEngine::RefreshMouseBaseline() {
+    int x = 0;
+    int y = 0;
+    if (InputSimulator::GetCursorScreenPos(x, y)) {
+        lastObservedCursor_.x = x;
+        lastObservedCursor_.y = y;
+    }
+}
+
 void AutoSkipEngine::Tick() {
     // 前置条件（窗口存在 / 未最小化 / 游戏在前台）已由 IsGameReadyForProcessing 保证，
     // 这里只做真正的采集与识别。
+
+    // 观察光标：用于判断用户是否正在用鼠标，从而避让自动点击
+    UpdateMouseObservation();
 
     // 1. 取客户区矩形
     RECT client{};
@@ -350,10 +396,17 @@ void AutoSkipEngine::Tick() {
                 state_.triangleFound = found;
             }
             if (found) {
-                input_.ClickAt(client.left + triangle.CenterX(), client.top + triangle.CenterY());
-                lastTriangleClickTime_ = std::chrono::steady_clock::now();
-                lastPlayingTime_ = std::chrono::steady_clock::now();
-                SetStatus(L"点击底部三角（关闭道具弹窗/推进）");
+                if (IsUserUsingMouse()) {
+                    // 用户正在用鼠标，这次不点击，避免把光标抢走
+                    SetStatus(L"已识别到指示器，但检测到鼠标操作，暂不点击");
+                } else {
+                    input_.ClickAt(client.left + triangle.CenterX(),
+                                   client.top + triangle.CenterY());
+                    RefreshMouseBaseline();
+                    lastTriangleClickTime_ = std::chrono::steady_clock::now();
+                    lastPlayingTime_ = std::chrono::steady_clock::now();
+                    SetStatus(L"点击底部指示器（关闭道具弹窗/推进）");
+                }
                 LogDiagnosticsPeriodically();
                 return;
             }
@@ -370,9 +423,14 @@ void AutoSkipEngine::Tick() {
         double dark = Cv::DarkRatio(gray);
         // 太黑说明是加载过场，点击无效；只有"黑屏 + 少量元素"才是可推进的剧情黑屏
         if (dark >= 0.5 && dark < 0.99) {
-            input_.ClickAt(client.left + width / 2, client.top + height / 2);
-            lastBlackClickTime_ = std::chrono::steady_clock::now();
-            SetStatus(L"黑屏剧情：点击推进");
+            if (IsUserUsingMouse()) {
+                SetStatus(L"黑屏剧情：检测到鼠标操作，暂不点击");
+            } else {
+                input_.ClickAt(client.left + width / 2, client.top + height / 2);
+                RefreshMouseBaseline();
+                lastBlackClickTime_ = std::chrono::steady_clock::now();
+                SetStatus(L"黑屏剧情：点击推进");
+            }
             LogDiagnosticsPeriodically();
             return;
         }

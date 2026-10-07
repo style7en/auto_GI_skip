@@ -241,6 +241,41 @@ const int intervalMs = IsGameReadyForProcessing() ? config_.loopIntervalMs   // 
 2. **状态文本**：`SetWindowTextW` 会让静态控件整块擦除重画。
    现在先比较当前文本，**内容没变就不调用**。
 
+### 6. 不抢用户的鼠标
+
+自动点击（底部指示器 / 黑屏推进）需要把光标移到固定位置，
+如果不管不顾就会把用户的鼠标"钉"在那里，严重影响手动操作。做了两层处理：
+
+**① 点击后立即复位**
+
+`InputSimulator::ClickAt` 先记下光标位置，点击完立刻还原：
+
+```cpp
+int originalX, originalY;
+bool hasOriginal = GetCursorScreenPos(originalX, originalY);
+MoveToAbsolute(screenX, screenY);
+// ... LEFTDOWN / LEFTUP ...
+if (hasOriginal) MoveToAbsolute(originalX, originalY);
+```
+
+> 细节：`SendInput` 的绝对坐标是 0..65535 归一化值，换算存在取整误差（最多 1px）。
+> 若每次还原都差 1px，几百次点击后会累积成明显偏移。
+> 所以 `MoveToAbsolute` 里带了一个**实测误差校正循环**（最多 3 次），保证精确复位。
+
+**② 检测到用户正在用鼠标时主动避让**
+
+引擎每帧观察光标位置（`GetCursorPos`），位置发生变化就认为用户在操作鼠标：
+
+```cpp
+const int kUserMouseGraceMs = 1200;   // 用户动过鼠标后的避让时长
+```
+
+这段时间内**跳过所有需要移动鼠标的动作**（键盘操作不受影响），
+状态栏会显示「已识别到指示器，但检测到鼠标操作，暂不点击」。
+
+我们自己的点击结束后会调用 `RefreshMouseBaseline()` 重置基线，
+因此合成移动不会被误判成用户操作。
+
 ## 七、底部"继续对话"指示器
 
 它其实是**金色菱形外框 + 内部实心倒三角**的组合，位置固定在对话框下方正中。
