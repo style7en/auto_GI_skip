@@ -9,6 +9,9 @@ release/
 log/
 out/
 
+## 发布打包件（上传到 GitHub Release 即可，不入库）
+*.zip
+
 ## 兼容历史残留的旧目录名（已废弃）
 build-dev/
 release-dev/
